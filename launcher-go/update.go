@@ -18,6 +18,8 @@ import (
 	"github.com/JulioCacko/The-Order-1886_pc/launcher-go/internal/updates"
 )
 
+const personalEdition = true
+
 // UpdateStatus is what the Home and System pages render.
 type UpdateStatus struct {
 	State           string `json:"state"`
@@ -133,6 +135,9 @@ func (app *App) updateChannel() string {
 }
 
 func (app *App) automaticUpdates() bool {
+	if personalEdition {
+		return false
+	}
 	callCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	body, err := app.Request(callCtx, "state.get", json.RawMessage("{}"))
@@ -211,6 +216,9 @@ func (app *App) startupUpdateCheck() {
 
 // UpdateCheck looks for a newer release on the configured channel.
 func (app *App) UpdateCheck() UpdateStatus {
+	if personalEdition {
+		return app.failUpdate(errors.New("Upstream updates are disabled in Personal Edition"))
+	}
 	app.updateMu.Lock()
 	app.setUpdateLocked("checking")
 	app.updateMu.Unlock()
@@ -268,6 +276,9 @@ var errDownloadStalled = errors.New("the download stalled: no data for a minute;
 
 // UpdateDownload fetches and verifies the release into a private stage.
 func (app *App) UpdateDownload() UpdateStatus {
+	if personalEdition {
+		return app.failUpdate(errors.New("Upstream updates are disabled in Personal Edition"))
+	}
 	app.mu.Lock()
 	busy := app.busy
 	app.mu.Unlock()
@@ -354,6 +365,9 @@ func (app *App) UpdateCancel() UpdateStatus {
 // UpdateInstall prepares the replacement, starts the helper copy and closes the
 // launcher. The helper waits for this process, holds the locks and relaunches.
 func (app *App) UpdateInstall() error {
+	if personalEdition {
+		return errors.New("Upstream updates are disabled in Personal Edition")
+	}
 	app.updateMu.Lock()
 	candidate := app.candidate
 	app.updateMu.Unlock()
