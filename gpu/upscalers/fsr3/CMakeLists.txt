@@ -19,8 +19,10 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/fsr-vulkan"
 set_target_properties(ffx_vulkan_portable ffx_vulkan_fsr3_vk_backend_1_1_4
                       ffx_vulkan_fsr3_host_1_1_4 PROPERTIES POSITION_INDEPENDENT_CODE ON)
 if(NOT MSVC)
-    # SDK vk.cpp uses std::lock_guard through an MSVC-only transitive include.
-    target_compile_options(ffx_vulkan_fsr3_vk_backend_1_1_4 PRIVATE -include mutex)
+    # SDK vk.cpp relies on MSVC transitive declarations for mutex, placement new and log2.
+    # SHELL groups prevent CMake's option deduplication from dropping repeated -include flags.
+    target_compile_options(ffx_vulkan_fsr3_vk_backend_1_1_4 PRIVATE
+        "SHELL:-include mutex" "SHELL:-include new" "SHELL:-include math.h")
 endif()
 
 if(MINGW)
