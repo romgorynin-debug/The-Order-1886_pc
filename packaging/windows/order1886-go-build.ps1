@@ -163,7 +163,7 @@ foreach ($name in @('prepare.py','link_modules.py','link_libc.py','save_backup.p
         'order1886_frame_trace.py','order1886_perf_report.py',
         # order1886.py imports this by name from the shipped scripts/ directory; without it
         # every packaged Play fails on the import, before any game file is read.
-        'order1886_patches.py','order1886_editions.py',
+        'order1886_patches.py','order1886_editions.py','order1886_qte.py',
         # The Button prompts option builds its artwork from the player's game files.
         'order1886_prompts.py','order1886_glyph_mod.py','order1886_ui_extract.py')) {
     Copy-Item -LiteralPath (Join-Path "$projectRoot/scripts" $name) -Destination $scriptData
