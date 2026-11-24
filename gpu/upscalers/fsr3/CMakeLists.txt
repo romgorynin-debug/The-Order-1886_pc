@@ -23,6 +23,12 @@ if(NOT MSVC)
     target_compile_options(ffx_vulkan_fsr3_vk_backend_1_1_4 PRIVATE -include mutex)
 endif()
 
+if(MINGW)
+    # SDK 1.1.4 uses Microsoft CRT helpers not available in every CLANG64 build.
+    target_compile_options(ffx_vulkan_fsr3_host_1_1_4 PRIVATE
+        -include "${CMAKE_CURRENT_SOURCE_DIR}/ffx_mingw_compat.h")
+endif()
+
 add_library(order1886_fsr3 SHARED order1886_fsr3.cpp)
 target_compile_features(order1886_fsr3 PRIVATE cxx_std_17)
 target_include_directories(order1886_fsr3 PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../../shim")
