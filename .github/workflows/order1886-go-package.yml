@@ -6,7 +6,7 @@
 # portable smoke (host and package only — it never starts the game).
 #
 # Unverified until it has completed on GitHub Actions.
-name: The Order 1886 Go package
+name: Personal Edition Windows build
 
 on:
   workflow_dispatch:
@@ -77,6 +77,8 @@ jobs:
       - name: Build the Go portable package and smoke-test it
         shell: pwsh
         run: |
+          & '${{ steps.python.outputs.python-path }}' -m unittest discover -s tests -p test_personal_qte.py
+          if ($LASTEXITCODE) { throw 'Personal QTE tests failed.' }
           & ./packaging/windows/order1886-go-build.ps1 `
             -Python '${{ steps.python.outputs.python-path }}' `
             -Runtime './out/order1886-runtime.exe' `
@@ -96,7 +98,7 @@ jobs:
         id: package
       - uses: actions/upload-artifact@v4
         with:
-          name: order1886-go-package
+          name: order1886-personal-windows
           path: |
             ${{ steps.package.outputs.package }}/The Order 1886/**
           if-no-files-found: error
