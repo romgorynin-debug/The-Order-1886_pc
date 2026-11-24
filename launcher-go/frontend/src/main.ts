@@ -151,6 +151,7 @@ function home() {
  return `<section class="hero" aria-labelledby="home-title"><div class="hero-content">
  <img class="hero-logo" src="/assets/logo-horizontal.png" alt="The Order: 1886">
  <h1 id="home-title">${escape(t('Return to Whitechapel'))}</h1>
+ <p>Personal Edition · QTE (CUSA00076, 60 FPS) / geometry / sun-shadow</p>
  <p>${escape(t('Your game. Your settings. Ready when you are.'))}</p>
  <button class="hero-play" data-action="play"${saving||starting||disconnected?' disabled':''}>${snapshot.busy?escape(t('Stop')):`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg>${escape(t('Play'))}`}</button>
  <button class="quiet hero-settings" data-page="graphics">${escape(t('Configure graphics'))}</button></div></section>
