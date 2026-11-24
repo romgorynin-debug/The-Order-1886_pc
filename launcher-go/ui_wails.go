@@ -24,7 +24,7 @@ func runUI(app *App) error {
 		return err
 	}
 	return wails.Run(&options.App{
-		Title: "The Order: 1886", Width: 1280, Height: 820, MinWidth: 940, MinHeight: 620,
+		Title: "The Order: 1886 - Personal Edition", Width: 1280, Height: 820, MinWidth: 940, MinHeight: 620,
 		BackgroundColour: &options.RGBA{R: 12, G: 14, B: 15, A: 255},
 		AssetServer:      &assetserver.Options{Assets: frontend},
 		Bind:             []interface{}{app}, OnStartup: app.startup, OnBeforeClose: app.beforeClose,
