@@ -40,6 +40,7 @@ import order1886_input as inputs
 import order1886_patches as patch_catalogue
 import order1886_editions as editions
 import order1886_prompts as prompts
+import order1886_qte as qte
 
 TITLE_ID = editions.VERIFIED_TITLE_ID  # the default folder name; every edition is accepted
 RUNTIME_ABI = 'order1886-native-1'
@@ -214,8 +215,10 @@ def prepare_game(game, out, frame_rate=30, aspect_ratio='original', patches=(), 
     resolution_profile = resolution.validate_source(game / 'eboot.bin', render_width, metadata, aspect_ratio)
     fingerprint = {name: sha256(game / name) for name in REQUIRED_FILES}
     for name in ('prepare.py', 'link_modules.py', 'link_libc.py', 'order1886_frame_rate.py', 'order1886_display.py',
-                 'order1886_post_effects.py', 'order1886_editions.py', 'order1886_resolution.py'):
+                 'order1886_post_effects.py', 'order1886_editions.py', 'order1886_resolution.py', 'order1886_qte.py'):
         fingerprint['tool/' + name] = sha256(SCRIPTS / name)
+    qte_enabled = qte.wanted(metadata, fingerprint['eboot.bin'], frame_rate)
+    fingerprint['personal_qte'] = qte.RECIPE_ID if qte_enabled else 'off'
     fingerprint.update(frame_rate=profile['engine_fps'], host_fps_limit=profile['host_fps_limit'],
                        frame_rate_recipe_sha256=profile['recipe_sha256'], runtime_abi=RUNTIME_ABI,
                        preparation_schema=3, aspect_ratio=aspect_ratio,
@@ -232,6 +235,7 @@ def prepare_game(game, out, frame_rate=30, aspect_ratio='original', patches=(), 
     image = out / 'boot-linked.bin'
     if (previous.get('inputs') == fingerprint and previous.get('game') == str(game)
             and image.is_file() and previous.get('image_sha256') == sha256(image)
+            and (not qte_enabled or previous.get('qte_profile', {}).get('applied') is True)
             and (frame_rate == 30 or previous.get('frame_rate_profile', {}).get('applied') is True)
             and (aspect_ratio == 'original' or previous.get('display_profile', {}).get('applied') is True)
             and (not effects_profile['disabled'] or previous.get('post_effects_profile', {}).get('applied') is True)
@@ -251,8 +255,12 @@ def prepare_game(game, out, frame_rate=30, aspect_ratio='original', patches=(), 
     # already binds that image to the eboot.bin hash it was produced from.
     applied_patches = patch_catalogue.apply_to_prepared(out / 'boot.bin', selected_patches, metadata)
     link_modules.link(game, out)
+    qte_profile = qte.apply(image) if qte_enabled else {'applied': False, 'reason': 'Requires exact CUSA00076 01.02 executable and 60 FPS'}
+    if qte_enabled:
+        emit_status('Personal QTE fix applied: ' + qte_profile['rva'], fallback=out.parent / 'logs/backend.log')
     result = {'game': str(game), 'title_id': metadata['TITLE_ID'], 'inputs': fingerprint,
               'frame_rate_profile': profile,
+              'qte_profile': qte_profile,
               'display_profile': display_profile,
               'post_effects_profile': effects_profile,
               'resolution_profile': resolution_profile,
@@ -444,6 +452,7 @@ def runtime_environment(runtime, user, settings=None, inherited=None):
         'ORDER1886_DEFERRED_READBACK': '1' if graphics['speculative_readbacks'] else '0',
         # Keep unverified speculative SRT work off the normal Order launch path.
         'ORDER1886_PREP_WORKERS': '0',
+        'ORDER1886_SUN_SYNC': '1',
         # Opt-in: the in-game menu and the settings it edits live are unqualified.
         'ORDER1886_SETTINGS_MENU': '1' if in_game_menu else '0',
         'ORDER1886_STREAM_MEMORY': 'cached', 'PYTHONIOENCODING': 'utf-8',
@@ -931,6 +940,7 @@ def main(argv=None):
                       'command': command, 'config_sha256': sha256(user / 'runtime.ini'),
                       'runtime_environment': {k: v for k, v in env.items() if k.startswith('ORDER1886_')},
                        'frame_rate_profile': prepared.get('frame_rate_profile'),
+                       'qte_profile': prepared.get('qte_profile'),
                        'display_profile': prepared.get('display_profile'),
                        'post_effects_profile': prepared.get('post_effects_profile'),
                        'configuration': {
