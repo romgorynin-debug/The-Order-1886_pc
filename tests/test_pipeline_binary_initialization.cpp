@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
 #include "video_core/renderer_vulkan/vk_instance.h"
 
 // Keep the dispatcher's ABI consistent with the renderer library.
@@ -88,7 +89,12 @@ void TestFallbacks() {
 }
 }
 
-int main(int argc, char**) {
+int main(int argc, char** argv) {
+    if (argc == 2 && std::strcmp(argv[1], "--cpu-only") == 0) {
+        TestFallbacks();
+        std::puts("pipeline-binary-initialization-test: CPU fallbacks passed; real-device check NOT RUN");
+        return 0;
+    }
     const bool enabled = argc > 1;
     SetCache(enabled ? "1" : "0");
     Vulkan::Instance instance{s32{-1}, false};
