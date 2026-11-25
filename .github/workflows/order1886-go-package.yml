@@ -10,6 +10,8 @@ name: Personal Edition Windows build
 
 on:
   workflow_dispatch:
+  push:
+    branches: [personal-edition]
 
 permissions:
   contents: read
@@ -54,6 +56,8 @@ jobs:
             sdl3:p fmt:p boost:p robin-map:p xxhash:p ffmpeg:p zydis:p
             spirv-tools:p spirv-headers:p spirv-cross:p
       - name: Build the Order native runtime and run CPU checks
+        env:
+          ORDER1886_CI_NO_VULKAN: '1'
         run: |
           set -euo pipefail
           export MSYS2_ROOT="$(cygpath -u "$(cygpath -w /)")"
@@ -93,7 +97,7 @@ jobs:
           if ($built.update_abi -ne 'order1886-update-2') { throw 'The package does not advertise the update ABI.' }
           if ($built.runtime_build.runtime_abi -ne 'order1886-native-1') { throw 'The package runtime is not an Order build.' }
           "package=$($package.FullName)" | Add-Content -LiteralPath $env:GITHUB_OUTPUT
-          'Host/package smoke only. Gameplay, stability and performance remain unverified.' |
+          'Host/package smoke only. Real-device pipeline initialization and async pipeline cache tests deferred (headless runner). Gameplay, stability and performance remain unverified.' |
             Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY
         id: package
       - uses: actions/upload-artifact@v4
