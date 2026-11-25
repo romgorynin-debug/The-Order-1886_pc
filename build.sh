@@ -51,7 +51,21 @@ MINGW*|MSYS*)
                wave-stats pass-census frame-capture async-pipeline-cache
                async-fetch-snapshot readback-queue wait-diagnostics readback-sources page-state selective-readbacks htile-metadata image-rejection image-type-map upstream-fixes sampler-validity index-buffer-request stencil-surface missing-imports gnm-decisions shared-memory-barriers irq-controller)
         ninja -C out/gpu "${tests[@]/%/-test}"
+        skipped_gpu=0
         for test in "${tests[@]}"; do
+            if [[ ${ORDER1886_CI_NO_VULKAN:-0} == 1 ]]; then
+                case $test in
+                    pipeline-binary-initialization)
+                        "out/gpu/$test-test.exe" --cpu-only
+                        echo "NOT RUN: pipeline-binary-initialization real-device portion (headless CI)"
+                        skipped_gpu=$((skipped_gpu+1))
+                        continue ;;
+                    async-pipeline-cache)
+                        echo "NOT RUN: $test (requires Vulkan device; headless CI)"
+                        skipped_gpu=$((skipped_gpu+1))
+                        continue ;;
+                esac
+            fi
             case $test in
                 selective-readbacks)
                     for mode in 0 1 2 3 999; do ORDER1886_READBACKS=$mode "out/gpu/$test-test.exe"; done
@@ -65,7 +79,8 @@ MINGW*|MSYS*)
             esac
             "out/gpu/$test-test.exe" "${args[@]}"
         done
-        printf 'Native checks passed: %s\n' "${#tests[@]}"
+        printf 'Native test targets compiled: %s; GPU checks deferred: %s\n' "${#tests[@]}" "$skipped_gpu"
+        echo 'All executed native checks passed.'
     fi
     python scripts/runtime_build_identity.py out/order1886-runtime.exe
     echo "Built $PWD/out/order1886-runtime.exe"
